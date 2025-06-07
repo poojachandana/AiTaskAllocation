@@ -1,0 +1,11 @@
+Individual_ID,Name,Skills,Experience_Level,Rating,Availability_Hours_Per_Week,Availability_Status,Preferences,Availability
+IND_1,Jacob Anderson,"Data Analysis, DevOps, Cloud Computing",Beginner,3.6,29,Available,"Python, DevOps",Available
+IND_2,Amy Gordon,"Web Development, AI Research",Beginner,3.7,36,Available,"Cybersecurity, DevOps",Available
+IND_3,Whitney Herrera,"Cloud Computing, Python, Machine Learning, Blockchain, Web Development",Beginner,3.2,12,Limited,"Data Analysis, Cloud Computing",Limited
+IND_4,James Davis,"AI Research, Blockchain, Machine Learning, DevOps, Python",Expert,4.1,31,Available,"UI/UX Design, AI Research",Available
+IND_5,James Jones,"UI/UX Design, Python, Cloud Computing",Beginner,3.6,18,Limited,"Cloud Computing, AI Research",Limited
+IND_6,Tony Brown,"Python, Cloud Computing, Data Analysis",Expert,3.1,22,Available,"DevOps, Machine Learning",Available
+IND_7,Jennifer Mcdonald,"DevOps, Python, Cybersecurity, Blockchain, Web Development",Beginner,3.9,26,Available,"AI Research, Blockchain",Available
+IND_8,Kayla Acevedo,"Web Development, Blockchain, Cybersecurity",Beginner,4.4,20,Limited,"UI/UX Design, AI Research",Limited
+IND_9,Austin Berry,"Cloud Computing, Cybersecurity, Python",Intermediate,4.4,28,Available,"Web Development, Cybersecurity",Available
+IND_10,Robert Johnson,"Web Development, UI/UX Design, AI Research, Python, Machine Learning",Beginner,4.4,38,Available,"Python, Data Analysis",Available
