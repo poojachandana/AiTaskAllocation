@@ -154,7 +154,7 @@ fig = px.bar(allocation_results, x="Task", y="Match Score (%)", color="Assigned 
 st.plotly_chart(fig)
 
 # -------------------------------
-# Manual Reassign (FINAL FIX)
+# Manual Reassign with Overload Warning
 # -------------------------------
 st.write("### 🔄 Manual Task Reassignment & AI Suggestions")
 updated_allocations = allocation_results.copy()
@@ -186,18 +186,22 @@ for i in range(len(updated_allocations)):
 
 # ✅ Recompute workload live
 workload_counts = updated_allocations["Assigned To"].value_counts().to_dict()
+overloaded_people = []
 
-for i in range(len(updated_allocations)):
-    person = updated_allocations.iloc[i]["Assigned To"]
+for person, count in workload_counts.items():
     max_allowed = min(max_tasks_per_person, availability[person])
-    if workload_counts[person] > max_allowed:
-        updated_allocations.at[i, "Assigned To"] = f"⚠ {person} (Overloaded)"
+    if count > max_allowed:
+        overloaded_people.append(f"{person} (Assigned {count}, Allowed {max_allowed})")
 
-# Show updated allocations immediately
-st.write("### 📋 Live Updated Allocations (with ⚠ warnings)")
+# 🔔 Show warning at the TOP if anyone is overloaded
+if overloaded_people:
+    st.warning("⚠ Overload detected! \n\n" + "\n".join(overloaded_people))
+
+# Show updated allocations
+st.write("### 📋 Live Updated Allocations")
 st.dataframe(updated_allocations)
 
-# Show AI Suggestions for each task
+# Show AI Suggestions
 for i in range(len(updated_allocations)):
     st.write(f"💡 AI Suggestions for Task {i+1}:")
     for suggestion in suggestions[i]:
