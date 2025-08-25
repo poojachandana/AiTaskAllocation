@@ -154,7 +154,7 @@ fig = px.bar(allocation_results, x="Task", y="Match Score (%)", color="Assigned 
 st.plotly_chart(fig)
 
 # -------------------------------
-# Manual Reassign (with Overload Warning)
+# Manual Reassign (FINAL FIX)
 # -------------------------------
 st.write("### 🔄 Manual Task Reassignment & AI Suggestions")
 updated_allocations = allocation_results.copy()
@@ -164,18 +164,18 @@ availability = {
     for name in individuals["name"]
 }
 
+# Dropdowns for all tasks
 for i in range(len(updated_allocations)):
     st.write(f"#### Task: {updated_allocations.iloc[i]['Task']}")
     current_assignee = updated_allocations.iloc[i]["Assigned To"]
 
-    # Clean overload labels
+    # Clean overload labels if any
     clean_name = current_assignee.replace("⚠ ", "").replace(" (Overloaded)", "")
     if clean_name in individuals["name"].tolist():
-        index = int(individuals[individuals["name"] == clean_name].index[0])
+        index = individuals["name"].tolist().index(clean_name)
     else:
         index = 0
 
-    # Dropdown for reassignment
     new_assignee = st.selectbox(
         f"Reassign Task {i+1}",
         individuals["name"].tolist(),
@@ -184,7 +184,7 @@ for i in range(len(updated_allocations)):
     )
     updated_allocations.at[i, "Assigned To"] = new_assignee
 
-# ✅ Recompute workload after all manual assignments
+# ✅ Recompute workload live
 workload_counts = updated_allocations["Assigned To"].value_counts().to_dict()
 
 for i in range(len(updated_allocations)):
@@ -193,10 +193,16 @@ for i in range(len(updated_allocations)):
     if workload_counts[person] > max_allowed:
         updated_allocations.at[i, "Assigned To"] = f"⚠ {person} (Overloaded)"
 
-    # Show AI Suggestions
+# Show updated allocations immediately
+st.write("### 📋 Live Updated Allocations (with ⚠ warnings)")
+st.dataframe(updated_allocations)
+
+# Show AI Suggestions for each task
+for i in range(len(updated_allocations)):
     st.write(f"💡 AI Suggestions for Task {i+1}:")
     for suggestion in suggestions[i]:
         st.write(f"➡ {suggestion['Candidate']} (Match: {suggestion['Match Score (%)']}%)")
+
 
 # Save Button
 if st.button("✅ Save Changes"):
