@@ -94,7 +94,7 @@ def extract_numeric_availability(value):
     numbers = re.findall(r'\d+', str(value))
     return int(numbers[0]) if numbers else max_tasks_per_person
 
-# Allocation Function
+# Allocation Function (with overload warning ⚠)
 def allocate_with_balanced_workload(cosine_scores, individuals, tasks):
     allocations = []
     suggestions = []
@@ -108,22 +108,28 @@ def allocate_with_balanced_workload(cosine_scores, individuals, tasks):
         sorted_indices = cosine_scores[task_idx].argsort(descending=True)
         best_match_idx = None
 
+        # Always pick the best candidate (even if overloaded)
         for idx in sorted_indices.tolist():
-            candidate = individuals.iloc[idx]
-            if workload[candidate["name"]] < min(max_tasks_per_person, availability[candidate["name"]]):
-                best_match_idx = idx
-                break
-
-        if best_match_idx is None:
-            best_match_idx = sorted_indices[0].item()
+            best_match_idx = idx
+            break
 
         best_match_score = float(cosine_scores[task_idx][best_match_idx].item() * 100)
         selected_individual = individuals.iloc[best_match_idx]
+
+        # Update workload
         workload[selected_individual["name"]] += 1
+
+        # Check overload condition
+        max_allowed = min(max_tasks_per_person, availability[selected_individual["name"]])
+        overloaded = workload[selected_individual["name"]] > max_allowed
+
+        assigned_to = selected_individual["name"]
+        if overloaded:
+            assigned_to = f"⚠ {assigned_to} (Overloaded)"
 
         task_data = {
             "Task": task.task_description,
-            "Assigned To": selected_individual["name"],
+            "Assigned To": assigned_to,
             "Skills Matched": selected_individual["skills"],
             "Availability": selected_individual["availability"],
             "Preference": selected_individual.get("preferences", "N/A"),
@@ -132,6 +138,7 @@ def allocate_with_balanced_workload(cosine_scores, individuals, tasks):
         }
         allocations.append(task_data)
 
+        # Always prepare top 3 suggestions
         top_suggestions = [{
             "Candidate": individuals.iloc[idx]["name"],
             "Match Score (%)": round(float(cosine_scores[task_idx][idx].item() * 100), 2)
@@ -156,7 +163,13 @@ updated_allocations = allocation_results.copy()
 for i in range(len(updated_allocations)):
     st.write(f"#### Task: {updated_allocations.iloc[i]['Task']}")
     current_assignee = updated_allocations.iloc[i]["Assigned To"]
-    index = int(individuals[individuals["name"] == current_assignee].index[0])
+
+    # Strip warning if present for dropdown selection
+    clean_name = current_assignee.replace("⚠ ", "").replace(" (Overloaded)", "")
+    if clean_name in individuals["name"].tolist():
+        index = int(individuals[individuals["name"] == clean_name].index[0])
+    else:
+        index = 0
 
     new_assignee = st.selectbox(
         f"Reassign Task {i+1}",
