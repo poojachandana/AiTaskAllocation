@@ -94,9 +94,7 @@ def extract_numeric_availability(value):
     numbers = re.findall(r'\d+', str(value))
     return int(numbers[0]) if numbers else max_tasks_per_person
 
-# -------------------------------
-# Allocation Function (with overload warning ⚠)
-# -------------------------------
+# Allocation Function
 def allocate_with_balanced_workload(cosine_scores, individuals, tasks):
     allocations = []
     suggestions = []
@@ -110,28 +108,26 @@ def allocate_with_balanced_workload(cosine_scores, individuals, tasks):
         sorted_indices = cosine_scores[task_idx].argsort(descending=True)
         best_match_idx = None
 
-        # Always pick the best candidate (even if overloaded)
         for idx in sorted_indices.tolist():
-            best_match_idx = idx
-            break
+            candidate = individuals.iloc[idx]
+            if workload[candidate["name"]] < min(max_tasks_per_person, availability[candidate["name"]]):
+                best_match_idx = idx
+                break
+
+        if best_match_idx is None:
+            best_match_idx = sorted_indices[0].item()
 
         best_match_score = float(cosine_scores[task_idx][best_match_idx].item() * 100)
         selected_individual = individuals.iloc[best_match_idx]
-
-        # Update workload
         workload[selected_individual["name"]] += 1
 
-        # Check overload condition
-        max_allowed = min(max_tasks_per_person, availability[selected_individual["name"]])
-        overloaded = workload[selected_individual["name"]] > max_allowed
-
-        assigned_to = selected_individual["name"]
-        if overloaded:
-            assigned_to = f"⚠ {assigned_to} (Overloaded)"
+        # Check overload
+        is_overloaded = workload[selected_individual["name"]] > min(max_tasks_per_person, availability[selected_individual["name"]])
+        assigned_name = f"⚠ {selected_individual['name']} (Overloaded)" if is_overloaded else selected_individual["name"]
 
         task_data = {
             "Task": task.task_description,
-            "Assigned To": assigned_to,
+            "Assigned To": assigned_name,
             "Skills Matched": selected_individual["skills"],
             "Availability": selected_individual["availability"],
             "Preference": selected_individual.get("preferences", "N/A"),
@@ -140,7 +136,6 @@ def allocate_with_balanced_workload(cosine_scores, individuals, tasks):
         }
         allocations.append(task_data)
 
-        # Always prepare top 3 suggestions
         top_suggestions = [{
             "Candidate": individuals.iloc[idx]["name"],
             "Match Score (%)": round(float(cosine_scores[task_idx][idx].item() * 100), 2)
@@ -159,13 +154,11 @@ fig = px.bar(allocation_results, x="Task", y="Match Score (%)", color="Assigned 
 st.plotly_chart(fig)
 
 # -------------------------------
-# Manual Reassign (with overload warning ⚠)
+# Manual Reassign (with Overload Warning)
 # -------------------------------
 st.write("### 🔄 Manual Task Reassignment & AI Suggestions")
 updated_allocations = allocation_results.copy()
 
-# Track workload dynamically
-manual_workload = {name: 0 for name in individuals["name"]}
 availability = {
     name: extract_numeric_availability(individuals[individuals["name"] == name]["availability"].values[0])
     for name in individuals["name"]
@@ -175,7 +168,7 @@ for i in range(len(updated_allocations)):
     st.write(f"#### Task: {updated_allocations.iloc[i]['Task']}")
     current_assignee = updated_allocations.iloc[i]["Assigned To"]
 
-    # Clean the name (remove overload warning text if present)
+    # Clean overload labels
     clean_name = current_assignee.replace("⚠ ", "").replace(" (Overloaded)", "")
     if clean_name in individuals["name"].tolist():
         index = int(individuals[individuals["name"] == clean_name].index[0])
@@ -186,29 +179,26 @@ for i in range(len(updated_allocations)):
     new_assignee = st.selectbox(
         f"Reassign Task {i+1}",
         individuals["name"].tolist(),
-        index=index
+        index=index,
+        key=f"reassign_{i}"
     )
+    updated_allocations.at[i, "Assigned To"] = new_assignee
 
-    # Update workload count
-    manual_workload[new_assignee] += 1
-    max_allowed = min(max_tasks_per_person, availability[new_assignee])
-    overloaded = manual_workload[new_assignee] > max_allowed
+# ✅ Recompute workload after all manual assignments
+workload_counts = updated_allocations["Assigned To"].value_counts().to_dict()
 
-    # Apply overload warning if needed
-    final_assignee = new_assignee
-    if overloaded:
-        final_assignee = f"⚠ {new_assignee} (Overloaded)"
-
-    updated_allocations.at[i, "Assigned To"] = final_assignee
+for i in range(len(updated_allocations)):
+    person = updated_allocations.iloc[i]["Assigned To"]
+    max_allowed = min(max_tasks_per_person, availability[person])
+    if workload_counts[person] > max_allowed:
+        updated_allocations.at[i, "Assigned To"] = f"⚠ {person} (Overloaded)"
 
     # Show AI Suggestions
-    st.write("💡 AI Suggestions:")
+    st.write(f"💡 AI Suggestions for Task {i+1}:")
     for suggestion in suggestions[i]:
         st.write(f"➡ {suggestion['Candidate']} (Match: {suggestion['Match Score (%)']}%)")
 
-# -------------------------------
 # Save Button
-# -------------------------------
 if st.button("✅ Save Changes"):
     db.reference("/task_allocations").set(updated_allocations.to_dict(orient="records"))
     st.write("### ✅ Updated Task Allocations (Synced in Real-Time)")
@@ -216,9 +206,7 @@ if st.button("✅ Save Changes"):
     fig_updated = px.bar(updated_allocations, x="Task", y="Match Score (%)", color="Assigned To", title="Updated Match Score per Task")
     st.plotly_chart(fig_updated)
 
-# -------------------------------
 # Optional Chat
-# -------------------------------
 st.write("### 💬 Team Chat System")
 chat_ref = db.reference("/chat")
 chat_messages = chat_ref.get()
@@ -232,8 +220,6 @@ if st.button("Send") and new_message:
     chat_ref.push({"user": "User", "message": new_message})
     st.rerun()
 
-# -------------------------------
 # Download Button
-# -------------------------------
 csv = updated_allocations.to_csv(index=False).encode('utf-8')
 st.download_button("📥 Download Allocation Results", data=csv, file_name="allocations.csv", mime="text/csv")
