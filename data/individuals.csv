@@ -1,4 +1,4 @@
-Individual_ID,Name,Skills,Experience_Level,Rating,Availability_Hours_Per_Week,Availability_Status,Preferences,Availability
+Individual_ID,Name,required_skills,Experience_Level,Rating,Availability_Hours_Per_Week,Availability_Status,Preferences,Availability
 IND_1,Jacob Anderson,"Data Analysis, DevOps, Cloud Computing",Beginner,3.6,29,Available,"Python, DevOps",Available
 IND_2,Amy Gordon,"Web Development, AI Research",Beginner,3.7,36,Available,"Cybersecurity, DevOps",Available
 IND_3,Whitney Herrera,"Cloud Computing, Python, Machine Learning, Blockchain, Web Development",Beginner,3.2,12,Limited,"Data Analysis, Cloud Computing",Limited
