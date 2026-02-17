@@ -1,4 +1,4 @@
-Task_ID,Task_Description,Required_Skills,Deadline,Complexity,Priority,Estimated_Hours
+Task_ID,Task_Description,skills,Deadline,Complexity,Priority,Estimated_Hours
 Develop an AI-powered chatbot,Optimize and enhance Data Analysis capabilities with a easy-level approach.,Data Analysis,2025-05-10,Easy,Low,48
 Design a responsive e-commerce website,"Conduct research and apply Web Development, AI Research techniques in a easy-level project.","Web Development, AI Research",2025-05-02,Easy,High,21
 Implement a DevOps pipeline,"Design and implement a easy-level solution using Web Development, UI/UX Design.","Web Development, UI/UX Design",2025-05-26,Easy,Medium,14
